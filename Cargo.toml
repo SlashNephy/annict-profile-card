@@ -1,5 +1,5 @@
 [package]
-name = "annict-card"
+name = "annict-profile-card"
 # description = ""
 version = "0.0.1"
 authors = ["Nep <spica@starry.blue>"]
@@ -10,10 +10,10 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = "3"
+actix-web = { version = "3", features = ["rustls"] }
 graphql_client = "0.9"
-serde = "1.0"
-reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 envy = "0.4"
 env_logger = "0.8"
 log = "0.4"

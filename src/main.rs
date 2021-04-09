@@ -1,5 +1,6 @@
 use actix_web::{Responder, HttpServer, HttpResponse, App};
-use actix_web::web::Query;
+use actix_web::client::Client as HttpClient;
+use actix_web::web::Path;
 use graphql_client::{GraphQLQuery, Response};
 use serde::Deserialize;
 use env_logger;
@@ -34,48 +35,42 @@ async fn main() -> std::io::Result<()> {
     info!("HTTP Server is listening for {}", config.http_addr);
 
     HttpServer::new(||
-        App::new().service(get_watching)
+        App::new()
+            .service(get_watching)
     )
     .bind(config.http_addr)?
     .run()
     .await
 }
 
-#[derive(Deserialize)]
-struct WatchingQuery {
-    username: String
-}
-
-#[actix_web::get("/watching")]
-async fn get_watching(query: Query<WatchingQuery>) -> impl Responder {
+#[actix_web::get("/watching/{username}")]
+async fn get_watching(Path(username): Path<String>) -> impl Responder {
     let data = perform_annict_query(get_user_query::Variables {
-        username: query.username,
+        username,
         state: get_user_query::StatusState::WATCHING,
         order_by: get_user_query::WorkOrder {
             direction: get_user_query::OrderDirection::DESC,
             field: get_user_query::WorkOrderField::WATCHERS_COUNT
         },
         seasons: vec!["2021-spring".to_string()]
-    });
-    
+    }).await;
+
     HttpResponse::Ok().body("Hello world!")
 }
 
 async fn perform_annict_query(variables: get_user_query::Variables) -> get_user_query::ResponseData {
     let request_body = GetUserQuery::build_query(variables);
+    trace!("Request: {:#?}", serde_json::to_value(&request_body).unwrap());
 
-    let client = reqwest::Client::builder()
-        .user_agent("annict-card/0.0.1")
-        .build()
-        .unwrap_or_else(|_| panic!("failed to build reqwest::Client"));
-    
     let config = load_config();
-    let res = client.post("https://api.annict.com/graphql")
+    let client = HttpClient::default();
+
+    let mut res = client.post("https://api.annict.com/graphql")
         .bearer_auth(config.annict_token)
-        .json(&request_body)
-        .send()
+        .header("User-Agent", "annict-profile-card/0.0.1")
+        .send_json(&request_body)
         .await
-        .unwrap_or_else(|_| panic!("failed to request GraphQL query"));
+        .unwrap_or_else(|e| panic!("failed to request GraphQL query: {}", e.to_string()));
 
     let response_body: Response<get_user_query::ResponseData> = res.json()
         .await

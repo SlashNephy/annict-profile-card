@@ -1,1 +1,1 @@
-# annict-watching-card
+# annict-profile-card
