@@ -1,0 +1,26 @@
+query GetUserQuery(
+  $username: String!,
+  $state: StatusState!,
+  $seasons: [String!]!,
+  $orderBy: WorkOrder!
+) {
+  user(username: $username) {
+    avatarUrl
+    backgroundImageUrl
+    description
+    name
+    works(
+      orderBy: $orderBy,
+      seasons: $seasons,
+      state: $state,
+    ) {
+      nodes {
+        title
+        twitterHashtag
+        image {
+          recommendedImageUrl
+        }
+      }
+    }
+  }
+}

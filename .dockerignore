@@ -1,0 +1,7 @@
+.github/
+target/
+
+Dockerfile
+README.md
+LICENSEB
+.gitignore
