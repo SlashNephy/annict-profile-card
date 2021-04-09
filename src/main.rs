@@ -2,17 +2,10 @@ use actix_web::{Responder, HttpServer, HttpResponse, App};
 use actix_web::client::Client as HttpClient;
 use actix_web::web::Path;
 use graphql_client::{GraphQLQuery, Response};
+use sailfish::TemplateOnce;
 use serde::Deserialize;
 use env_logger;
 use log::*;
-
-#[derive(GraphQLQuery)]
-#[graphql(
-    schema_path = "src/schema.graphql",
-    query_path = "src/GetUserQuery.graphql",
-    response_derives = "Debug"
-)]
-struct GetUserQuery;
 
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -36,11 +29,16 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(||
         App::new()
+            .service(get_index)
             .service(get_watching)
     )
     .bind(config.http_addr)?
     .run()
     .await
+}
+
+async fn get_index() -> impl Responder {
+    HttpResponse::PermanentRedirect().header("Location", "https://github.com/SlashNephy/annict-profile-card")
 }
 
 #[actix_web::get("/watching/{username}")]
@@ -55,8 +53,30 @@ async fn get_watching(Path(username): Path<String>) -> impl Responder {
         seasons: vec!["2021-spring".to_string()]
     }).await;
 
-    HttpResponse::Ok().body("Hello world!")
+    let svg = WatchingSvgTemplate {
+        name: data.user.unwrap().name
+    }
+        .render_once()
+        .unwrap_or_else(|e| panic!("failed to render svg: {}", e.to_string()));
+
+    HttpResponse::Ok()
+        .content_type("image/svg+xml")
+        .body(svg)
 }
+
+#[derive(TemplateOnce)]
+#[template(path = "watching.svg")]
+struct WatchingSvgTemplate {
+    name: String
+}
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.graphql",
+    query_path = "src/GetUserQuery.graphql",
+    response_derives = "Debug"
+)]
+struct GetUserQuery;
 
 async fn perform_annict_query(variables: get_user_query::Variables) -> get_user_query::ResponseData {
     let request_body = GetUserQuery::build_query(variables);
@@ -74,7 +94,7 @@ async fn perform_annict_query(variables: get_user_query::Variables) -> get_user_
 
     let response_body: Response<get_user_query::ResponseData> = res.json()
         .await
-        .unwrap_or_else(|_| panic!("failed to parse GraphQL response json"));
+        .unwrap_or_else(|e| panic!("failed to parse GraphQL response json: {}", e.to_string()));
     trace!("Response: {:#?}", response_body);
 
     if let Some(errors) = response_body.errors {
