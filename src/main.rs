@@ -37,8 +37,11 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
+#[actix_web::get("/")]
 async fn get_index() -> impl Responder {
-    HttpResponse::PermanentRedirect().header("Location", "https://github.com/SlashNephy/annict-profile-card")
+    HttpResponse::PermanentRedirect()
+        .header("Location", "https://github.com/SlashNephy/annict-profile-card")
+        .finish()
 }
 
 #[actix_web::get("/watching/{username}")]
