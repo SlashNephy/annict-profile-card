@@ -56,8 +56,10 @@ async fn get_watching(Path(username): Path<String>) -> impl Responder {
         seasons: vec!["2021-spring".to_string()]
     }).await;
 
+    let user = data.user.unwrap();
     let svg = WatchingSvgTemplate {
-        name: data.user.unwrap().name
+        name: user.name,
+        works: user.works.unwrap().nodes.unwrap().into_iter().map(|x| x.unwrap()).collect::<Vec<_>>()
     }
         .render_once()
         .unwrap_or_else(|e| panic!("failed to render svg: {}", e.to_string()));
@@ -70,7 +72,8 @@ async fn get_watching(Path(username): Path<String>) -> impl Responder {
 #[derive(TemplateOnce)]
 #[template(path = "watching.svg")]
 struct WatchingSvgTemplate {
-    name: String
+    name: String,
+    works: Vec<get_user_query::GetUserQueryUserWorksNodes>
 }
 
 #[derive(GraphQLQuery)]
