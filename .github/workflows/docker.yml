@@ -5,7 +5,7 @@ on:
     paths-ignore:
       - .gitignore
       - LICENSE
-      - '**.md'
+      - README.md
     branches:
       - master
       - dev
