@@ -38,3 +38,19 @@ pub async fn perform_query<Q: GraphQLQuery + 'static>(variables: Q::Variables) -
 
     return response.data.unwrap();
 }
+
+pub async fn encode_image(url: String) -> String {
+    let client = HttpClient::default();
+    let image = client.get(url)
+        .header("User-Agent", USER_AGENT)
+        .send()
+        .await
+        .unwrap_or_else(|e| panic!("failed to get image: {}", e.to_string()))
+        .body()
+        .await
+        .unwrap_or_else(|e| panic!("failed to get body: {}", e.to_string()));
+
+
+    let data = base64::encode(image);
+    format!("data:image/png;base64,{}", data)
+}

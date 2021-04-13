@@ -23,7 +23,8 @@ struct WatchingSvgTemplate {
     username: String,
     avatar_url: String,
     works: Vec<WatchingQueryUserWorksNodes>,
-    image_urls: Vec<String>
+    image_urls: Vec<String>,
+    render_as_data_uri: bool
 }
 
 #[actix_web::get("/watching/{username}")]
@@ -56,7 +57,8 @@ pub async fn get_watching(Path(username): Path<String>) -> actix_web::Result<Htt
         username: user.username,
         avatar_url: user.avatar_url.unwrap(),
         works,
-        image_urls
+        image_urls,
+        render_as_data_uri: false
     }
         .render_once()
         .map_err(|e| InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?;
