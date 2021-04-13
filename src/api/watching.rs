@@ -1,11 +1,12 @@
-use actix_web::{Responder, HttpResponse};
-use actix_web::client::Client as HttpClient;
+use actix_web::{HttpResponse};
+use actix_web::error::InternalError;
+use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use graphql_client::{GraphQLQuery, Response};
+use graphql_client::GraphQLQuery;
 use sailfish::TemplateOnce;
-use log::*;
 
-use crate::config;
+use super::common;
+use watching_query::*;
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -21,24 +22,24 @@ struct WatchingSvgTemplate {
     name: String,
     username: String,
     avatar_url: String,
-    works: Vec<watching_query::WatchingQueryUserWorksNodes>,
+    works: Vec<WatchingQueryUserWorksNodes>,
     image_urls: Vec<String>
 }
 
 #[actix_web::get("/watching/{username}")]
-pub async fn get_watching(Path(username): Path<String>) -> impl Responder {
-    let data = perform_annict_query(watching_query::Variables {
+pub async fn get_watching(Path(username): Path<String>) -> actix_web::Result<HttpResponse> {
+    let data = common::perform_query::<WatchingQuery>(Variables {
         username,
-        state: watching_query::StatusState::WATCHING,
-        order_by: watching_query::WorkOrder {
-            direction: watching_query::OrderDirection::DESC,
-            field: watching_query::WorkOrderField::WATCHERS_COUNT
+        state: StatusState::WATCHING,
+        order_by: WorkOrder {
+            direction: OrderDirection::DESC,
+            field: WorkOrderField::WATCHERS_COUNT
         },
-        seasons: vec!["2021-spring".to_string()]
+        seasons: vec![String::from(common::CURRENT_SEASON)]
     }).await;
 
-    let user: watching_query::WatchingQueryUser = data.user.unwrap();
-    let works: Vec<watching_query::WatchingQueryUserWorksNodes> = user
+    let user: WatchingQueryUser = data.user.unwrap();
+    let works: Vec<WatchingQueryUserWorksNodes> = user
         .works.unwrap()
         .nodes.unwrap()
         .into_iter()
@@ -58,38 +59,11 @@ pub async fn get_watching(Path(username): Path<String>) -> impl Responder {
         image_urls
     }
         .render_once()
-        .unwrap_or_else(|e| panic!("failed to render svg: {}", e.to_string()));
+        .map_err(|e| InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?;
 
-    HttpResponse::Ok()
-        .content_type("image/svg+xml")
-        .body(svg)
-}
-
-async fn perform_annict_query(variables: watching_query::Variables) -> watching_query::ResponseData {
-    let request_body = WatchingQuery::build_query(variables);
-    trace!("Request: {:#?}", serde_json::to_value(&request_body).unwrap());
-
-    let config = config::load();
-    let client = HttpClient::default();
-
-    let response_body: Response<watching_query::ResponseData> = client.post("https://api.annict.com/graphql")
-        .bearer_auth(config.annict_token)
-        .header("User-Agent", "annict-profile-card/0.0.1")
-        .send_json(&request_body)
-        .await
-        .unwrap_or_else(|e| panic!("failed to request GraphQL query: {}", e.to_string()))
-        .json()
-        .await
-        .unwrap_or_else(|e| panic!("failed to parse GraphQL response json: {}", e.to_string()));
-    trace!("Response: {:#?}", response_body);
-
-    if let Some(errors) = response_body.errors {
-        let text = errors.into_iter()
-            .map(|x| format!("{:?}", x))
-            .collect::<Vec<String>>()
-            .join("\n");
-        panic!("there are errors\n{}", text);
-    }
-
-    return response_body.data.unwrap();
+    Ok(
+        HttpResponse::Ok()
+            .content_type("image/svg+xml")
+            .body(svg)
+    )
 }
