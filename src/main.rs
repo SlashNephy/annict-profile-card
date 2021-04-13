@@ -1,6 +1,7 @@
 use actix_web::{Responder, HttpServer, HttpResponse, App};
 use actix_web::client::Client as HttpClient;
 use actix_web::web::Path;
+use actix_cors::Cors;
 use graphql_client::{GraphQLQuery, Response};
 use sailfish::TemplateOnce;
 use serde::Deserialize;
@@ -27,11 +28,18 @@ async fn main() -> std::io::Result<()> {
     let config = load_config();
     info!("HTTP Server is listening for {}", config.http_addr);
 
-    HttpServer::new(||
+    HttpServer::new(|| {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allowed_methods(vec!["GET"])
+            .allow_any_header()
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .service(get_index)
             .service(get_watching)
-    )
+    })
     .bind(config.http_addr)?
     .run()
     .await
