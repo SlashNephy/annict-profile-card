@@ -56,10 +56,25 @@ async fn get_watching(Path(username): Path<String>) -> impl Responder {
         seasons: vec!["2021-spring".to_string()]
     }).await;
 
-    let user = data.user.unwrap();
+    let user: get_user_query::GetUserQueryUser = data.user.unwrap();
+    let works: Vec<get_user_query::GetUserQueryUserWorksNodes> = user
+        .works.unwrap()
+        .nodes.unwrap()
+        .into_iter()
+        .filter_map(|x| x)
+        .collect();
+    let image_urls = (&works).into_iter()
+        .filter_map(|x| x.image.as_ref())
+        .filter_map(|x| x.recommended_image_url.as_ref())
+        .map(|x| x.to_owned())
+        .take(3)
+        .collect();
     let svg = WatchingSvgTemplate {
         name: user.name,
-        works: user.works.unwrap().nodes.unwrap().into_iter().map(|x| x.unwrap()).collect::<Vec<_>>()
+        username: user.username,
+        avatar_url: user.avatar_url.unwrap(),
+        works,
+        image_urls
     }
         .render_once()
         .unwrap_or_else(|e| panic!("failed to render svg: {}", e.to_string()));
@@ -73,7 +88,10 @@ async fn get_watching(Path(username): Path<String>) -> impl Responder {
 #[template(path = "watching.svg")]
 struct WatchingSvgTemplate {
     name: String,
-    works: Vec<get_user_query::GetUserQueryUserWorksNodes>
+    username: String,
+    avatar_url: String,
+    works: Vec<get_user_query::GetUserQueryUserWorksNodes>,
+    image_urls: Vec<String>
 }
 
 #[derive(GraphQLQuery)]
@@ -91,26 +109,24 @@ async fn perform_annict_query(variables: get_user_query::Variables) -> get_user_
     let config = load_config();
     let client = HttpClient::default();
 
-    let mut res = client.post("https://api.annict.com/graphql")
+    let response_body: Response<get_user_query::ResponseData> = client.post("https://api.annict.com/graphql")
         .bearer_auth(config.annict_token)
         .header("User-Agent", "annict-profile-card/0.0.1")
         .send_json(&request_body)
         .await
-        .unwrap_or_else(|e| panic!("failed to request GraphQL query: {}", e.to_string()));
-
-    let response_body: Response<get_user_query::ResponseData> = res.json()
+        .unwrap_or_else(|e| panic!("failed to request GraphQL query: {}", e.to_string()))
+        .json()
         .await
         .unwrap_or_else(|e| panic!("failed to parse GraphQL response json: {}", e.to_string()));
     trace!("Response: {:#?}", response_body);
 
     if let Some(errors) = response_body.errors {
-        error!("there are errors:");
-
-        for error in &errors {
-            error!("{:?}", error);
-        }
+        let text = errors.into_iter()
+            .map(|x| format!("{:?}", x))
+            .collect::<Vec<String>>()
+            .join("\n");
+        panic!("there are errors\n{}", text);
     }
 
-    return response_body.data
-        .unwrap_or_else(|| panic!("failed to access data"));
+    return response_body.data.unwrap();
 }

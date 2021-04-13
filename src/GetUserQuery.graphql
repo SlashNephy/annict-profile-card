@@ -5,10 +5,10 @@ query GetUserQuery(
   $orderBy: WorkOrder!
 ) {
   user(username: $username) {
-    avatarUrl
-    backgroundImageUrl
-    description
     name
+    username
+    avatarUrl
+
     works(
       orderBy: $orderBy,
       seasons: $seasons,
@@ -16,7 +16,6 @@ query GetUserQuery(
     ) {
       nodes {
         title
-        twitterHashtag
         image {
           recommendedImageUrl
         }
