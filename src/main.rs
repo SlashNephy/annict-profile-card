@@ -1,5 +1,5 @@
 use actix_cors::Cors;
-use actix_web::{App, HttpServer};
+use actix_web::{App, HttpServer, middleware};
 use env_logger;
 use log::*;
 
@@ -21,6 +21,7 @@ async fn main() -> std::io::Result<()> {
             .max_age(3600);
 
         App::new()
+            .wrap(middleware::Logger::default())
             .wrap(cors)
             .service(api::index::get_index)
             .service(api::watching::get_watching)
