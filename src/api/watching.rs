@@ -10,7 +10,6 @@ use log::*;
 use super::common;
 use watching_query::*;
 use log::Level::Trace;
-use crate::api::watching::SortKey::SatisfactionRate;
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -20,15 +19,25 @@ use crate::api::watching::SortKey::SatisfactionRate;
 )]
 struct WatchingQuery;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct WatchingParameter {
+    #[serde(default = "default_limit_works")]
+    limit_works: usize,
+    #[serde(default = "default_limit_images")]
+    limit_images: usize,
     #[serde(default)]
     sort: SortKey,
+    #[serde(default)]
+    order: SortOrder,
     #[serde(default)]
     expose_image_url: bool
 }
 
-#[derive(Deserialize, PartialEq)]
+fn default_limit_works() -> usize { 10 }
+
+fn default_limit_images() -> usize { 3 }
+
+#[derive(Deserialize, PartialEq, Debug)]
 enum SortKey {
     #[serde(alias = "watcher")]
     WatchersCount,
@@ -38,7 +47,21 @@ enum SortKey {
 
 impl Default for SortKey {
     fn default() -> Self {
-        SatisfactionRate
+        SortKey::SatisfactionRate
+    }
+}
+
+#[derive(Deserialize, PartialEq, Debug)]
+enum SortOrder {
+    #[serde(alias = "desc")]
+    Descending,
+    #[serde(alias = "asc")]
+    Ascending
+}
+
+impl Default for SortOrder {
+    fn default() -> Self {
+        SortOrder::Descending
     }
 }
 
@@ -49,6 +72,7 @@ struct WatchingSvgTemplate {
     username: String,
     avatar_uri: String,
     works: Vec<WatchingQueryUserWorksNodes>,
+    works_count: usize,
     image_uris: Vec<String>
 }
 
@@ -58,7 +82,10 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
         username,
         state: StatusState::WATCHING,
         order_by: WorkOrder {
-            direction: OrderDirection::DESC,
+            direction: match &query.order {
+                SortOrder::Ascending => OrderDirection::ASC,
+                SortOrder::Descending => OrderDirection::DESC
+            },
             field: WorkOrderField::WATCHERS_COUNT
         },
         seasons: vec![String::from(common::CURRENT_SEASON)]
@@ -67,6 +94,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
     })?;
     
     if log_enabled!(Trace) {
+        trace!("Query: {:#?}", &query);
         trace!("Response: {:#?}", &data);
     }
 
@@ -87,27 +115,37 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
     };
 
     // 作品のベクトル
-    let mut works: Vec<WatchingQueryUserWorksNodes> = user
+    let original_works: Vec<WatchingQueryUserWorksNodes> = user
         .works.unwrap()
         .nodes.unwrap()
         .into_iter()
         .filter_map(|x| x)
         .collect();
+    let works_count = original_works.len();
+    let mut works: Vec<WatchingQueryUserWorksNodes> = original_works;
     // 満足度の降順でソート
     if query.sort == SortKey::SatisfactionRate {
         works.sort_unstable_by(|x, y| {
             let rate_x: f64 = x.satisfaction_rate.unwrap_or(0.0);
             let rate_y: f64 = y.satisfaction_rate.unwrap_or(0.0);
-            rate_y.partial_cmp(&rate_x).unwrap()
+            
+            match &query.order {
+                SortOrder::Ascending => rate_x.partial_cmp(&rate_y).unwrap(),
+                SortOrder::Descending => rate_y.partial_cmp(&rate_x).unwrap()
+            }
         });
     }
+    // limit_works 個に制限
+    works = works.into_iter()
+        .take(query.limit_works)
+        .collect();
     
     // 作品のアイキャッチ画像のベクトル
     let original_image_uris: Vec<String> = (&works).into_iter()
         .filter_map(|x| x.image.as_ref())
         .filter_map(|x| x.recommended_image_url.as_ref())
         .map(|x| x.to_owned())
-        .take(3)
+        .take(query.limit_images)
         .collect();
     let image_uris = match query.expose_image_url {
         true => original_image_uris,
@@ -139,6 +177,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
         username: user.username,
         avatar_uri,
         works,
+        works_count,
         image_uris
     }
         .render_once()

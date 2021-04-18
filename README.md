@@ -22,7 +22,10 @@ Annict [GraphQL API](https://developers.annict.jp/graphql-api) を使用して�
 
 |クエリパラメータ|デフォルト値|説明|
 |---|:---:|---|
+|`limit_works`|`10`| 表示する作品数を指定します。 |
+|`limit_images`|`3`| 表示する作品のアイキャッチ画像の数を指定します。 |
 |`sort`|`satisfaction`| 作品一覧をソートする方法を指定します。<br>`satisfaction` の場合, 満足度 % の値で降順にソートします。<br>`watcher` の場合, 視聴者数の数で降順にソートします。 |
+|`order`|`desc`| ソートする方向を指定します。<br>`desc` の場合は降順で, `asc` の場合は昇順になります。|
 |`expose_image_url`|`false`| `true` の場合, SVG 画像内に埋め込まれる画像を外部 URL で埋め込みます。<br>`false` の場合, Base64 エンコードされた画像が埋め込まれます。<br>GitHub などのサイトに貼り付ける場合には CORS の関係で Base64 エンコード画像しか表示されません。 |
 
 [![watching](https://annict-card.starry.blue/watching/SlashNephy)](https://annict-card.starry.blue/watching/SlashNephy)

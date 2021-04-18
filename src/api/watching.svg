@@ -53,7 +53,7 @@
         <%= *name %> @<%= *username %>
       </text>
       <text x="250" class="text">
-        今期視聴中: <%= works.len() %> 作品
+        今期視聴中: <%= works_count %> 作品
       </text>
     </g>
   </g>
