@@ -28,7 +28,7 @@ Annict [GraphQL API](https://developers.annict.jp/graphql-api) を使用して�
 |`order`|`desc`| ソートする方向を指定します。<br>`desc` の場合は降順で, `asc` の場合は昇順になります。|
 |`expose_image_url`|`false`| `true` の場合, SVG 画像内に埋め込まれる画像を外部 URL で埋め込みます。<br>`false` の場合, Base64 エンコードされた画像が埋め込まれます。<br>GitHub などのサイトに貼り付ける場合には CORS の関係で Base64 エンコード画像しか表示されません。 |
 
-[![watching](https://annict-card.starry.blue/watching/SlashNephy)](https://annict-card.starry.blue/watching/SlashNephy)
+[![watching](https://annict-card-dev.starry.blue/watching/SlashNephy)](https://annict-card-dev.starry.blue/watching/SlashNephy)
 
 ## Docker
 
