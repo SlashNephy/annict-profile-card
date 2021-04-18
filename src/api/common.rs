@@ -3,15 +3,21 @@ use graphql_client::{GraphQLQuery, Response};
 use log::*;
 
 use crate::config;
+use crate::api::error::ApiError;
+use log::Level::Trace;
+use std::time::Duration;
 
 pub const CURRENT_SEASON: &str = "2021-spring";
 
 const ANNICT_GRAPHQL_ENDPOINT: &str = "https://api.annict.com/graphql";
-const USER_AGENT: &str = "annict-profile-card/0.0.1";
+const USER_AGENT: &str = "annict-profile-card (+https://github.com/SlashNephy/annict-profile-card)";
 
-pub async fn perform_query<Q: GraphQLQuery + 'static>(variables: Q::Variables) -> Q::ResponseData {
+pub async fn perform_query<Q: GraphQLQuery + 'static>(variables: Q::Variables) -> Result<Q::ResponseData, ApiError> {
     let request_body = Q::build_query(variables);
-    trace!("Request: {:#?}", serde_json::to_value(&request_body).unwrap());
+
+    if log_enabled!(Trace) {
+        trace!("Request: {:#?}", serde_json::to_value(&request_body).unwrap());
+    }
 
     let config = config::load();
     let client = HttpClient::default();
@@ -21,36 +27,46 @@ pub async fn perform_query<Q: GraphQLQuery + 'static>(variables: Q::Variables) -
         .header("User-Agent", USER_AGENT)
         .send_json(&request_body)
         .await
-        .unwrap_or_else(|e| panic!("failed to request GraphQL query: {}", e.to_string()));
-    trace!("Response: {:#?}", &response_body);
+        .map_err(|e| ApiError::AnnictGraphQLRequestError(e))?;
 
+    if log_enabled!(Trace) {
+        trace!("Response Header: {:#?}", &response_body);
+    }
+    
     let response: Response<Q::ResponseData> = response_body.json()
         .await
-        .unwrap_or_else(|e| panic!("failed to parse GraphQL response json: {}", e.to_string()));
+        .map_err(|e| ApiError::AnnictGraphQLResponseParseError(e))?;
 
     if let Some(errors) = response.errors {
         let text = errors.into_iter()
-            .map(|x| format!("{:?}", x))
+            .map(|x| x.to_string())
             .collect::<Vec<String>>()
             .join("\n");
-        panic!("there are errors\n{}", text);
+        
+        return Err(
+            ApiError::AnnictGraphQLResponseError(text)
+        )
     }
-
-    return response.data.unwrap();
+    
+    Ok(
+        response.data.unwrap()
+    )
 }
 
-pub async fn encode_image(url: String) -> String {
+pub async fn encode_image(url: String) -> Result<String, ApiError> {
     let client = HttpClient::default();
     let image = client.get(url)
         .header("User-Agent", USER_AGENT)
         .send()
         .await
-        .unwrap_or_else(|e| panic!("failed to get image: {}", e.to_string()))
+        .map_err(|e| ApiError::ImageRequestError(e))?
         .body()
+        .limit(3_145_728) // 3 MB
         .await
-        .unwrap_or_else(|e| panic!("failed to get body: {}", e.to_string()));
-
-
+        .map_err(|e| ApiError::ImageReadBodyError(e))?;
+    
     let data = base64::encode(image);
-    format!("data:image/png;base64,{}", data)
+    Ok(
+        format!("data:image/png;base64,{}", data)
+    )
 }
