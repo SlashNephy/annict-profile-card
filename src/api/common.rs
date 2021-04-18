@@ -1,3 +1,4 @@
+use std::time::Duration;
 use actix_web::client::Client as HttpClient;
 use graphql_client::{GraphQLQuery, Response};
 use log::*;
@@ -24,6 +25,7 @@ pub async fn perform_query<Q: GraphQLQuery + 'static>(variables: Q::Variables) -
     let mut response_body = client.post(ANNICT_GRAPHQL_ENDPOINT)
         .bearer_auth(config.annict_token)
         .header("User-Agent", USER_AGENT)
+        .timeout(Duration::from_secs(15))
         .send_json(&request_body)
         .await
         .map_err(|e| ApiError::AnnictGraphQLRequestError(e))?;
@@ -56,6 +58,7 @@ pub async fn encode_image(url: String) -> Result<String, ApiError> {
     let client = HttpClient::default();
     let image = client.get(url)
         .header("User-Agent", USER_AGENT)
+        .timeout(Duration::from_secs(15))
         .send()
         .await
         .map_err(|e| ApiError::ImageRequestError(e))?
