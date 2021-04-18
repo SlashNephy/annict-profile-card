@@ -21,6 +21,16 @@ struct WatchingQuery;
 
 #[derive(Deserialize, Debug)]
 pub struct WatchingParameter {
+    #[serde(default = "default_bg_color")]
+    bg_color: String,
+    #[serde(default = "default_header_color")]
+    header_color: String,
+    #[serde(default = "default_text_color")]
+    text_color: String,
+    #[serde(default = "default_icon_color")]
+    icon_color: String,
+    #[serde(default = "default_title_color")]
+    title_color: String,
     #[serde(default = "default_limit_works")]
     limit_works: usize,
     #[serde(default = "default_limit_images")]
@@ -33,8 +43,12 @@ pub struct WatchingParameter {
     expose_image_url: bool
 }
 
+fn default_bg_color() -> String { String::from("1a1b27") }
+fn default_header_color() -> String { String::from("70a5fd") }
+fn default_text_color() -> String { String::from("d6e3e1") }
+fn default_icon_color() -> String { String::from("bf91f3") }
+fn default_title_color() -> String { String::from("38bdae") }
 fn default_limit_works() -> usize { 10 }
-
 fn default_limit_images() -> usize { 3 }
 
 #[derive(Deserialize, PartialEq, Debug)]
@@ -68,6 +82,7 @@ impl Default for SortOrder {
 #[derive(TemplateOnce)]
 #[template(path = "watching.svg")]
 struct WatchingSvgTemplate {
+    query: Query<WatchingParameter>,
     name: String,
     username: String,
     avatar_uri: String,
@@ -184,6 +199,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
     };
     
     let svg = WatchingSvgTemplate {
+        query,
         name: user.name,
         username: user.username,
         avatar_uri,
