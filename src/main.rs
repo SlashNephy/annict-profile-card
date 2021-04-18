@@ -10,6 +10,8 @@ mod api;
 async fn main() -> std::io::Result<()> {
     env_logger::init();
 
+    openssl_probe::init_ssl_cert_env_vars();
+
     let config = config::load();
     info!("HTTP Server is listening for {}", config.http_addr);
 
