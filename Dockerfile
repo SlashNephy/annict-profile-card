@@ -1,8 +1,8 @@
 FROM ekidd/rust-musl-builder:stable AS builder
 
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update \
-    && apt-get install -y ca-certificates
+RUN sudo apt-get update \
+    && sudo apt-get install -y ca-certificates
 
 COPY --chown=rust:rust . ./
 RUN cargo build --release \
