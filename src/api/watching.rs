@@ -21,9 +21,13 @@ struct WatchingQuery;
 
 #[derive(Deserialize)]
 pub struct WatchingParameter {
+    #[serde(default = "default_sort")]
+    sort: String,
     #[serde(default)]
     expose_image_url: bool
 }
+
+fn default_sort() -> String { String::from("satisfaction") }
 
 #[derive(TemplateOnce)]
 #[template(path = "watching.svg")]
@@ -60,12 +64,19 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
             .map_err(|e| ErrorInternalServerError(e))?;
     }
 
-    let works: Vec<WatchingQueryUserWorksNodes> = user
+    let mut works: Vec<WatchingQueryUserWorksNodes> = user
         .works.unwrap()
         .nodes.unwrap()
         .into_iter()
         .filter_map(|x| x)
         .collect();
+    if query.sort == "satisfaction" {
+        works.sort_unstable_by(|x, y| {
+            let rate_x = x.satisfaction_rate.unwrap_or(0f64);
+            let rate_y = y.satisfaction_rate.unwrap_or(0f64);
+            rate_y.partial_cmp(&rate_x).unwrap()
+        });
+    }
     
     let mut image_uris: Vec<String> = (&works).into_iter()
         .filter_map(|x| x.image.as_ref())

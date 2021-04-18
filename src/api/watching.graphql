@@ -19,6 +19,7 @@ query WatchingQuery(
         image {
           recommendedImageUrl
         }
+        satisfactionRate
       }
     }
   }

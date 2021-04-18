@@ -5,7 +5,6 @@ use log::*;
 use crate::config;
 use crate::api::error::ApiError;
 use log::Level::Trace;
-use std::time::Duration;
 
 pub const CURRENT_SEASON: &str = "2021-spring";
 
