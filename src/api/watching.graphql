@@ -1,4 +1,4 @@
-query GetUserQuery(
+query WatchingQuery(
   $username: String!,
   $state: StatusState!,
   $seasons: [String!]!,
@@ -19,6 +19,7 @@ query GetUserQuery(
         image {
           recommendedImageUrl
         }
+        satisfactionRate
       }
     }
   }

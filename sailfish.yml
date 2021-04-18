@@ -1,0 +1,4 @@
+template_dir: src/api
+
+optimization:
+  rm_whitespace: true

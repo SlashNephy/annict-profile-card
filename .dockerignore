@@ -1,7 +1,7 @@
 .github/
 target/
 
-Dockerfile
-README.md
-LICENSEB
 .gitignore
+Dockerfile
+LICENSE
+README.md

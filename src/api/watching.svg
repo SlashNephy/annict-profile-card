@@ -47,13 +47,13 @@
   <rect x="0.5" y="0.5" rx="4.5" height="99%" stroke="#E4E2E2" width="494" fill="#1a1b27" stroke-opacity="1"/>
 
   <g transform="translate(15, 15)">
-    <image class="avatar" href="<%= avatar_url %>" height="40" width="40"/>
+    <image class="avatar" href="<%= avatar_uri %>" height="40" width="40"/>
     <g transform="translate(50, 25)">
       <text class="header">
         <%= *name %> @<%= *username %>
       </text>
       <text x="250" class="text">
-        今期視聴中: <%= works.len() %> 作品
+        今期視聴中: <%= works_count %> 作品
       </text>
     </g>
   </g>
@@ -75,9 +75,9 @@
   </g>
 
   <svg x="305" y="65">
-    <% for (i, image_url) in image_urls.iter().enumerate() { %>
+    <% for (i, image_uri) in image_uris.iter().enumerate() { %>
     <g transform="translate(0, <%= i * 102 %>)">
-      <image href="<%= image_url %>" height="95"/>
+      <image href="<%= image_uri %>" height="95"/>
     </g>
     <% } %>
   </svg>
