@@ -99,7 +99,12 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
     }
 
     // ユーザオブジェクト
-    let user: WatchingQueryUser = data.user.unwrap();
+    let user: WatchingQueryUser = match data.user {
+        Some(user) => user,
+        None => return Ok(
+            HttpResponse::NotFound().finish()
+        )
+    };
 
     // プロフィール画像
     let original_avatar_url = user.avatar_url.unwrap();
