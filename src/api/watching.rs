@@ -109,7 +109,10 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
             // base64 エンコードする
             match common::encode_image(original_avatar_url).await {
                 Ok(uri) => uri,
-                _ => String::from("data:image/png;base64,")
+                Err(e) => {
+                    warn!("An error occurred while encode_image: {:#?}", e);
+                    String::from("data:image/png;base64,")
+                }
             }
         }
     };
@@ -165,7 +168,10 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
                     match x {
                         Ok(uri) => uri,
                         // 失敗したら空画像に差し替える
-                        Err(_) => String::from("data:image/png;base64,")
+                        Err(e) => {
+                            warn!("An error occurred while encode_image: {:#?}", e);
+                            String::from("data:image/png;base64,")
+                        }
                     }
                 })
                 .collect()
