@@ -10,6 +10,7 @@ use log::*;
 use super::common;
 use watching_query::*;
 use log::Level::Trace;
+use actix_web::http::header::{CacheControl, CacheDirective};
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -215,6 +216,10 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
     Ok(
         HttpResponse::Ok()
             .content_type("image/svg+xml")
+            .set(CacheControl(vec![
+                CacheDirective::Private,
+                CacheDirective::MaxAge(7200)
+            ]))
             .body(svg)
     )
 }
