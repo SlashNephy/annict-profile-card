@@ -217,7 +217,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
         HttpResponse::Ok()
             .content_type("image/svg+xml")
             .set(CacheControl(vec![
-                CacheDirective::Private,
+                CacheDirective::Public,
                 CacheDirective::MaxAge(7200)
             ]))
             .body(svg)
