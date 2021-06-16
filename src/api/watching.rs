@@ -106,13 +106,15 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
             },
             field: WorkOrderField::WATCHERS_COUNT
         },
-        seasons: vec![
-            query.season.clone().unwrap_or(common::get_current_season())
-        ]
+        seasons: match query.season.as_deref() {
+            Some("all") => vec![],
+            Some(value) => vec![String::from(value)],
+            None => vec![common::get_current_season()]
+        }
     }).await.map_err(|e| {
         ErrorInternalServerError(e)
     })?;
-    
+
     if log_enabled!(Trace) {
         trace!("Query: {:#?}", &query);
         trace!("Response: {:#?}", &data);

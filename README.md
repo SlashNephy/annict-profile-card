@@ -22,6 +22,12 @@ Annict [GraphQL API](https://developers.annict.jp/graphql-api) を使用して�
 
 |クエリパラメータ|デフォルト値|説明|
 |---|:---:|---|
+|`season`|**現在のシーズン**|表示するシーズンを `2021-summer` という形式で指定します。`all` を指定した場合, すべてのシーズンが対象です。|
+|`bg_color`|`1a1b27`|背景の色を hex で指定します。|
+|`header_color`|`70a5fd`|ヘッダーの色を hex で指定します。|
+|`text_color`|`d6e3e1`|文字の色を hex で指定します。|
+|`icon_color`|`bf91f3`|アイコンの色を hex で指定します。|
+|`title_color`|`38bdae`|タイトルの色を hex で指定します。|
 |`limit_works`|`10`| 表示する作品数を指定します。 |
 |`limit_images`|`3`| 表示する作品のアイキャッチ画像の数を指定します。 |
 |`sort`|`satisfaction`| 作品一覧をソートする方法を指定します。<br>`satisfaction` の場合, 満足度 % の値で降順にソートします。<br>`watcher` の場合, 視聴者数の数で降順にソートします。 |
