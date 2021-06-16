@@ -20,8 +20,10 @@ use actix_web::http::header::{CacheControl, CacheDirective};
 )]
 struct WatchingQuery;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct WatchingParameter {
+    #[serde(default)]
+    season: Option<String>,
     #[serde(default = "default_bg_color")]
     bg_color: String,
     #[serde(default = "default_header_color")]
@@ -52,7 +54,7 @@ fn default_title_color() -> String { String::from("38bdae") }
 fn default_limit_works() -> usize { 10 }
 fn default_limit_images() -> usize { 3 }
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(Deserialize, PartialEq, Debug, Clone)]
 enum SortKey {
     #[serde(alias = "watcher")]
     WatchersCount,
@@ -66,7 +68,7 @@ impl Default for SortKey {
     }
 }
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(Deserialize, PartialEq, Debug, Clone)]
 enum SortOrder {
     #[serde(alias = "desc")]
     Descending,
@@ -98,13 +100,15 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
         username,
         state: StatusState::WATCHING,
         order_by: WorkOrder {
-            direction: match &query.order {
+            direction: match query.order.clone() {
                 SortOrder::Ascending => OrderDirection::ASC,
                 SortOrder::Descending => OrderDirection::DESC
             },
             field: WorkOrderField::WATCHERS_COUNT
         },
-        seasons: vec![String::from(common::CURRENT_SEASON)]
+        seasons: vec![
+            query.season.clone().unwrap_or(common::get_current_season())
+        ]
     }).await.map_err(|e| {
         ErrorInternalServerError(e)
     })?;

@@ -2,12 +2,11 @@ use std::time::Duration;
 use actix_web::client::Client as HttpClient;
 use graphql_client::{GraphQLQuery, Response};
 use log::*;
+use chrono::{Local, Datelike};
 
 use crate::config;
 use crate::api::error::ApiError;
 use log::Level::Trace;
-
-pub const CURRENT_SEASON: &str = "2021-spring";
 
 const ANNICT_GRAPHQL_ENDPOINT: &str = "https://api.annict.com/graphql";
 const USER_AGENT: &str = "annict-profile-card (+https://github.com/SlashNephy/annict-profile-card)";
@@ -71,4 +70,18 @@ pub async fn encode_image(url: String) -> Result<String, ApiError> {
     Ok(
         format!("data:image/png;base64,{}", data)
     )
+}
+
+pub fn get_current_season() -> String {
+    let now = Local::today();
+    let year = now.year();
+    let season = match now.month() {
+        1..=3 => "winter",
+        4..=6 => "spring",
+        7..=9 => "summer",
+        10..=12 => "autumn",
+        _ => panic!("Invalid month")
+    };
+
+    format!("{}-{}", year, season)
 }
