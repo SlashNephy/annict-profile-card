@@ -1,4 +1,5 @@
-use actix_web::client::Client as HttpClient;
+use awc::middleware::Redirect;
+use awc::Client as HttpClient;
 use chrono::{Datelike, Local};
 use graphql_client::{GraphQLQuery, Response};
 use log::*;
@@ -29,7 +30,7 @@ pub async fn perform_query<Q: GraphQLQuery + 'static>(
     let mut response_body = client
         .post(ANNICT_GRAPHQL_ENDPOINT)
         .bearer_auth(config.annict_token)
-        .header("User-Agent", USER_AGENT)
+        .append_header(("User-Agent", USER_AGENT))
         .timeout(Duration::from_secs(15))
         .send_json(&request_body)
         .await
@@ -58,10 +59,10 @@ pub async fn perform_query<Q: GraphQLQuery + 'static>(
 }
 
 pub async fn encode_image(url: String) -> Result<String, ApiError> {
-    let client = HttpClient::default();
+    let client = HttpClient::builder().wrap(Redirect::new()).finish();
     let image = client
         .get(url)
-        .header("User-Agent", USER_AGENT)
+        .append_header(("User-Agent", USER_AGENT))
         .timeout(Duration::from_secs(15))
         .send()
         .await

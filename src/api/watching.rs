@@ -110,9 +110,10 @@ struct WatchingSvgTemplate {
 
 #[actix_web::get("/watching/{username}")]
 pub async fn get_watching(
-    Path(username): Path<String>,
+    path: Path<String>,
     query: Query<WatchingParameter>,
 ) -> actix_web::Result<HttpResponse> {
+    let username = path.into_inner();
     let data = common::perform_query::<WatchingQuery>(Variables {
         username,
         state: StatusState::WATCHING,
@@ -231,11 +232,13 @@ pub async fn get_watching(
     .render_once()
     .map_err(|e| ErrorInternalServerError(e))?;
 
-    Ok(HttpResponse::Ok()
-        .content_type("image/svg+xml")
-        .set(CacheControl(vec![
-            CacheDirective::Public,
-            CacheDirective::MaxAge(7200),
-        ]))
-        .body(svg))
+    let mut builder = HttpResponse::Ok();
+    builder.content_type("image/svg+xml");
+    builder.insert_header(CacheControl(vec![
+        CacheDirective::Public,
+        CacheDirective::MaxAge(7200),
+    ]));
+    let response = builder.body(svg);
+
+    Ok(response)
 }

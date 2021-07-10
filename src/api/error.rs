@@ -1,4 +1,4 @@
-use actix_web::client::{JsonPayloadError, PayloadError, SendRequestError};
+use awc::error::{JsonPayloadError, PayloadError, SendRequestError};
 use thiserror::Error;
 
 #[derive(Debug, Error)]

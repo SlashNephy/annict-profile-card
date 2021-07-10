@@ -23,8 +23,8 @@ async fn main() -> std::io::Result<()> {
             .max_age(3600);
 
         App::new()
-            .wrap(middleware::Logger::default())
             .wrap(cors)
+            .wrap(middleware::Logger::default())
             .service(api::index::get_index)
             .service(api::watching::get_watching)
     })
