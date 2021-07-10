@@ -1,16 +1,16 @@
-use actix_web::HttpResponse;
 use actix_web::error::ErrorInternalServerError;
 use actix_web::web::{Path, Query};
+use actix_web::HttpResponse;
+use futures::future::join_all;
 use graphql_client::GraphQLQuery;
+use log::*;
 use sailfish::TemplateOnce;
 use serde::Deserialize;
-use futures::future::join_all;
-use log::*;
 
 use super::common;
-use watching_query::*;
-use log::Level::Trace;
 use actix_web::http::header::{CacheControl, CacheDirective};
+use log::Level::Trace;
+use watching_query::*;
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -43,23 +43,37 @@ pub struct WatchingParameter {
     #[serde(default)]
     order: SortOrder,
     #[serde(default)]
-    expose_image_url: bool
+    expose_image_url: bool,
 }
 
-fn default_bg_color() -> String { String::from("1a1b27") }
-fn default_header_color() -> String { String::from("70a5fd") }
-fn default_text_color() -> String { String::from("d6e3e1") }
-fn default_icon_color() -> String { String::from("bf91f3") }
-fn default_title_color() -> String { String::from("38bdae") }
-fn default_limit_works() -> usize { 10 }
-fn default_limit_images() -> usize { 3 }
+fn default_bg_color() -> String {
+    String::from("1a1b27")
+}
+fn default_header_color() -> String {
+    String::from("70a5fd")
+}
+fn default_text_color() -> String {
+    String::from("d6e3e1")
+}
+fn default_icon_color() -> String {
+    String::from("bf91f3")
+}
+fn default_title_color() -> String {
+    String::from("38bdae")
+}
+fn default_limit_works() -> usize {
+    10
+}
+fn default_limit_images() -> usize {
+    3
+}
 
 #[derive(Deserialize, PartialEq, Debug, Clone)]
 enum SortKey {
     #[serde(alias = "watcher")]
     WatchersCount,
     #[serde(alias = "satisfaction")]
-    SatisfactionRate
+    SatisfactionRate,
 }
 
 impl Default for SortKey {
@@ -73,7 +87,7 @@ enum SortOrder {
     #[serde(alias = "desc")]
     Descending,
     #[serde(alias = "asc")]
-    Ascending
+    Ascending,
 }
 
 impl Default for SortOrder {
@@ -91,29 +105,32 @@ struct WatchingSvgTemplate {
     avatar_uri: String,
     works: Vec<WatchingQueryUserWorksNodes>,
     works_count: usize,
-    image_uris: Vec<String>
+    image_uris: Vec<String>,
 }
 
 #[actix_web::get("/watching/{username}")]
-pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingParameter>) -> actix_web::Result<HttpResponse> {
+pub async fn get_watching(
+    Path(username): Path<String>,
+    query: Query<WatchingParameter>,
+) -> actix_web::Result<HttpResponse> {
     let data = common::perform_query::<WatchingQuery>(Variables {
         username,
         state: StatusState::WATCHING,
         order_by: WorkOrder {
             direction: match query.order.clone() {
                 SortOrder::Ascending => OrderDirection::ASC,
-                SortOrder::Descending => OrderDirection::DESC
+                SortOrder::Descending => OrderDirection::DESC,
             },
-            field: WorkOrderField::WATCHERS_COUNT
+            field: WorkOrderField::WATCHERS_COUNT,
         },
         seasons: match query.season.as_deref() {
             Some("all") => vec![],
             Some(value) => vec![String::from(value)],
-            None => vec![common::get_current_season()]
-        }
-    }).await.map_err(|e| {
-        ErrorInternalServerError(e)
-    })?;
+            None => vec![common::get_current_season()],
+        },
+    })
+    .await
+    .map_err(|e| ErrorInternalServerError(e))?;
 
     if log_enabled!(Trace) {
         trace!("Query: {:#?}", &query);
@@ -123,9 +140,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
     // ユーザオブジェクト
     let user: WatchingQueryUser = match data.user {
         Some(user) => user,
-        None => return Ok(
-            HttpResponse::NotFound().finish()
-        )
+        None => return Ok(HttpResponse::NotFound().finish()),
     };
 
     // プロフィール画像
@@ -146,8 +161,10 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
 
     // 作品のベクトル
     let original_works: Vec<WatchingQueryUserWorksNodes> = user
-        .works.unwrap()
-        .nodes.unwrap()
+        .works
+        .unwrap()
+        .nodes
+        .unwrap()
         .into_iter()
         .filter_map(|x| x)
         .collect();
@@ -158,20 +175,19 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
         works.sort_unstable_by(|x, y| {
             let rate_x: f64 = x.satisfaction_rate.unwrap_or(0.0);
             let rate_y: f64 = y.satisfaction_rate.unwrap_or(0.0);
-            
+
             match &query.order {
                 SortOrder::Ascending => rate_x.partial_cmp(&rate_y).unwrap(),
-                SortOrder::Descending => rate_y.partial_cmp(&rate_x).unwrap()
+                SortOrder::Descending => rate_y.partial_cmp(&rate_x).unwrap(),
             }
         });
     }
     // limit_works 個に制限
-    works = works.into_iter()
-        .take(query.limit_works)
-        .collect();
-    
+    works = works.into_iter().take(query.limit_works).collect();
+
     // 作品のアイキャッチ画像のベクトル
-    let original_image_uris: Vec<String> = (&works).into_iter()
+    let original_image_uris: Vec<String> = (&works)
+        .into_iter()
         .filter_map(|x| x.image.as_ref())
         .filter_map(|x| x.recommended_image_url.as_ref())
         .map(|x| x.to_owned())
@@ -184,11 +200,9 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
             let job = join_all(
                 original_image_uris
                     .into_iter()
-                    .map(|x| {
-                        common::encode_image(x)
-                    })
+                    .map(|x| common::encode_image(x)),
             );
-    
+
             job.await
                 .into_iter()
                 .map(|x| {
@@ -204,7 +218,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
                 .collect()
         }
     };
-    
+
     let svg = WatchingSvgTemplate {
         query,
         name: user.name,
@@ -212,20 +226,16 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
         avatar_uri,
         works,
         works_count,
-        image_uris
+        image_uris,
     }
-        .render_once()
-        .map_err(|e| {
-            ErrorInternalServerError(e)
-        })?;
+    .render_once()
+    .map_err(|e| ErrorInternalServerError(e))?;
 
-    Ok(
-        HttpResponse::Ok()
-            .content_type("image/svg+xml")
-            .set(CacheControl(vec![
-                CacheDirective::Public,
-                CacheDirective::MaxAge(7200)
-            ]))
-            .body(svg)
-    )
+    Ok(HttpResponse::Ok()
+        .content_type("image/svg+xml")
+        .set(CacheControl(vec![
+            CacheDirective::Public,
+            CacheDirective::MaxAge(7200),
+        ]))
+        .body(svg))
 }

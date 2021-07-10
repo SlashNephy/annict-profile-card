@@ -1,10 +1,10 @@
 use actix_cors::Cors;
-use actix_web::{App, HttpServer, middleware};
+use actix_web::{middleware, App, HttpServer};
 use env_logger;
 use log::*;
 
-mod config;
 mod api;
+mod config;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
