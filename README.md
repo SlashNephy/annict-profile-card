@@ -13,6 +13,8 @@ Annict [GraphQL API](https://developers.annict.jp/graphql-api) を使用して�
 
 ## Endpoints
 
+以下のエンドポイントは私用に設置しているものです。動作を保証しません。
+
 安定版 (master ブランチ): `https://apps.starry.blue/annict-profile-card`  
 開発版 (dev ブランチ): `https://apps.starry.blue/annict-profile-card-dev`
 
@@ -34,7 +36,7 @@ Annict [GraphQL API](https://developers.annict.jp/graphql-api) を使用して�
 |`order`|`desc`| ソートする方向を指定します。<br>`desc` の場合は降順で, `asc` の場合は昇順になります。|
 |`expose_image_url`|`false`| `true` の場合, SVG 画像内に埋め込まれる画像を外部 URL で埋め込みます。<br>`false` の場合, Base64 エンコードされた画像が埋め込まれます。 |
 
-[![watching](https://apps.starry.blue/annict-profile-card/watching/kokoro?limit_images=0)](https://apps.starry.blue/annict-profile-card/watching/kokoro)
+![image](https://user-images.githubusercontent.com/7302150/153339724-98ebbd59-038e-4abe-89d2-d2ebf6eabb18.png)
 
 ## Known Issue
 
