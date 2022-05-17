@@ -1,5 +1,4 @@
 use std::time::Duration;
-use actix_web::client::Client as HttpClient;
 use graphql_client::{GraphQLQuery, Response};
 use log::*;
 use chrono::{Local, Datelike};
@@ -19,11 +18,11 @@ pub async fn perform_query<Q: GraphQLQuery + 'static>(variables: Q::Variables) -
     }
 
     let config = config::load();
-    let client = HttpClient::default();
+    let client = awc::Client::default();
 
     let mut response_body = client.post(ANNICT_GRAPHQL_ENDPOINT)
         .bearer_auth(config.annict_token)
-        .header("User-Agent", USER_AGENT)
+        .append_header(("User-Agent", USER_AGENT))
         .timeout(Duration::from_secs(15))
         .send_json(&request_body)
         .await
@@ -32,7 +31,7 @@ pub async fn perform_query<Q: GraphQLQuery + 'static>(variables: Q::Variables) -
     if log_enabled!(Trace) {
         trace!("Response Header: {:#?}", &response_body);
     }
-    
+
     let response: Response<Q::ResponseData> = response_body.json()
         .await
         .map_err(|e| ApiError::AnnictGraphQLResponseParseError(e))?;
@@ -42,21 +41,21 @@ pub async fn perform_query<Q: GraphQLQuery + 'static>(variables: Q::Variables) -
             .map(|x| x.to_string())
             .collect::<Vec<String>>()
             .join("\n");
-        
+
         return Err(
             ApiError::AnnictGraphQLResponseError(text)
         )
     }
-    
+
     Ok(
         response.data.unwrap()
     )
 }
 
 pub async fn encode_image(url: String) -> Result<String, ApiError> {
-    let client = HttpClient::default();
+    let client = awc::Client::default();
     let image = client.get(url)
-        .header("User-Agent", USER_AGENT)
+        .append_header(("User-Agent", USER_AGENT))
         .timeout(Duration::from_secs(15))
         .send()
         .await
@@ -65,7 +64,7 @@ pub async fn encode_image(url: String) -> Result<String, ApiError> {
         .limit(3_145_728) // 3 MB
         .await
         .map_err(|e| ApiError::ImageReadBodyError(e))?;
-    
+
     let data = base64::encode(image);
     Ok(
         format!("data:image/png;base64,{}", data)

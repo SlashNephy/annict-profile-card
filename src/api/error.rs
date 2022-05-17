@@ -1,4 +1,4 @@
-use actix_web::client::{SendRequestError, JsonPayloadError, PayloadError};
+use awc::error::{JsonPayloadError, PayloadError, SendRequestError};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -9,7 +9,7 @@ pub enum ApiError {
     AnnictGraphQLResponseParseError(JsonPayloadError),
     #[error("an error returned from GraphQL server: {0}")]
     AnnictGraphQLResponseError(String),
-    
+
     #[error("failed to get image: {0}")]
     ImageRequestError(SendRequestError),
     #[error("failed to read image body: {0}")]

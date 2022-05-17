@@ -1,0 +1,4 @@
+template_dirs = ["src/api"]
+
+[optimizations]
+rm_whitespace = true

@@ -95,7 +95,8 @@ struct WatchingSvgTemplate {
 }
 
 #[actix_web::get("/watching/{username}")]
-pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingParameter>) -> actix_web::Result<HttpResponse> {
+pub async fn get_watching(path: Path<String>, query: Query<WatchingParameter>) -> actix_web::Result<HttpResponse> {
+    let username = path.into_inner();
     let data = common::perform_query::<WatchingQuery>(Variables {
         username,
         state: StatusState::WATCHING,
@@ -158,7 +159,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
         works.sort_unstable_by(|x, y| {
             let rate_x: f64 = x.satisfaction_rate.unwrap_or(0.0);
             let rate_y: f64 = y.satisfaction_rate.unwrap_or(0.0);
-            
+
             match &query.order {
                 SortOrder::Ascending => rate_x.partial_cmp(&rate_y).unwrap(),
                 SortOrder::Descending => rate_y.partial_cmp(&rate_x).unwrap()
@@ -169,7 +170,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
     works = works.into_iter()
         .take(query.limit_works)
         .collect();
-    
+
     // 作品のアイキャッチ画像のベクトル
     let original_image_uris: Vec<String> = (&works).into_iter()
         .filter_map(|x| x.image.as_ref())
@@ -188,7 +189,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
                         common::encode_image(x)
                     })
             );
-    
+
             job.await
                 .into_iter()
                 .map(|x| {
@@ -204,7 +205,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
                 .collect()
         }
     };
-    
+
     let svg = WatchingSvgTemplate {
         query,
         name: user.name,
@@ -222,7 +223,7 @@ pub async fn get_watching(Path(username): Path<String>, query: Query<WatchingPar
     Ok(
         HttpResponse::Ok()
             .content_type("image/svg+xml")
-            .set(CacheControl(vec![
+            .append_header(CacheControl(vec![
                 CacheDirective::Public,
                 CacheDirective::MaxAge(7200)
             ]))
