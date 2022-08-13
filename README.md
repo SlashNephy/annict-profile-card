@@ -56,7 +56,7 @@ version: '3.8'
 services:
   server:
     container_name: annict-profile-card
-    image: slashnephy/annict-profile-card
+    image: ghcr.io/slashnephy/annict-profile-card:master
     restart: always
     ports:
       - 8080:8080/tcp
