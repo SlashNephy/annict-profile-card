@@ -1,0 +1,27 @@
+name: 'Build Image'
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+    branches-ignore:
+      - 'renovate/**'
+
+  release:
+    types:
+      - published
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  actions: read
+  security-events: write
+
+jobs:
+  build:
+    uses: SlashNephy/.github/.github/workflows/docker-build.yml@master
+    with:
+      image-name: ghcr.io/slashnephy/annict-profile-card
+      image-platforms: linux/amd64

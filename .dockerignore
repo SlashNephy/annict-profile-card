@@ -1,7 +1,8 @@
 .github/
-target/
-
-.gitignore
 Dockerfile
-LICENSE
+.dockerignore
+.gitignore
+target/
+renovate.json
 README.md
+LICENSE
