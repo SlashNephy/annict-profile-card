@@ -14,6 +14,6 @@ COPY ./ /app/
 RUN cargo build --release --offline --workspace --verbose \
     && strip target/release/annict-profile-card
 
-FROM --platform=$TARGETPLATFORM debian:11.3-slim AS runtime
+FROM --platform=$TARGETPLATFORM debian:12.2-slim@sha256:b55e2651b71408015f8068dd74e1d04404a8fa607dd2cfe284b4824c11f4d9bd AS runtime
 COPY --from=build /app/target/release/annict-profile-card /
 ENTRYPOINT [ "/annict-profile-card" ]
