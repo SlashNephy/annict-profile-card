@@ -9,14 +9,26 @@ Annict [GraphQL API](https://developers.annict.jp/graphql-api) を使用して�
 [![issues](https://img.shields.io/github/issues/SlashNephy/annict-profile-card)](https://github.com/SlashNephy/annict-profile-card/issues)
 [![pull requests](https://img.shields.io/github/issues-pr/SlashNephy/annict-profile-card)](https://github.com/SlashNephy/annict-profile-card/pulls)
 
-## Endpoints
+## Docker
 
-以下のエンドポイントは私用に設置しているものです。動作を保証しません。
+`docker-compose.yml`
 
-安定版 (master ブランチ): `https://apps.starry.blue/annict-profile-card`  
-開発版 (dev ブランチ): `https://apps.starry.blue/annict-profile-card-dev`
+```yaml
+version: '3.8'
 
-### /watching/{username}
+services:
+  server:
+    container_name: annict-profile-card
+    image: ghcr.io/slashnephy/annict-profile-card:master
+    restart: always
+    ports:
+      - 8080:8080/tcp
+    environment:
+      ANNICT_TOKEN: xxx  # https://annict.jp/settings/tokens/new で発行できます
+      RUST_LOG: info,annict_profile_card=debug
+```
+
+### GET /watching/{username}
 
 今期視聴しているアニメ一覧を返します。表示される作品は Annict 上で「見てる」を設定したものが対象です。
 
@@ -43,22 +55,3 @@ Annict [GraphQL API](https://developers.annict.jp/graphql-api) を使用して�
 
 - GitHub 上では作品のアイキャッチ画像が表示できない  
   GitHub では SVG 画像の長さ制限?があるようでエンコードしても表示できません。`limit_images=0` でアイキャッチ画像を無効化できます。
-
-## Docker
-
-`docker-compose.yml`
-
-```yaml
-version: '3.8'
-
-services:
-  server:
-    container_name: annict-profile-card
-    image: ghcr.io/slashnephy/annict-profile-card:master
-    restart: always
-    ports:
-      - 8080:8080/tcp
-    environment:
-      ANNICT_TOKEN: xxx  # https://annict.jp/settings/tokens/new で発行できます
-      RUST_LOG: info,annict_profile_card=debug
-```
